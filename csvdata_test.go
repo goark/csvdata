@@ -23,6 +23,25 @@ const (
 `
 )
 
+func TestWithNil(t *testing.T) {
+	r := (*csvdata.Reader)(nil).WithComma(',').WithFieldsPerRecord(1)
+	if err := r.Next(); !errors.Is(err, csvdata.ErrNullPointer) {
+		t.Errorf("Next() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
+	}
+	if _, err := r.Header(); !errors.Is(err, csvdata.ErrNullPointer) {
+		t.Errorf("Header() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
+	}
+	if row := r.Row(); r != nil {
+		t.Errorf("Row() is \"%v\", want nil.", row)
+	}
+	if _, err := r.GetString(0); !errors.Is(err, csvdata.ErrNullPointer) {
+		t.Errorf("GetString() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
+	}
+	if _, err := r.GetString(0); !errors.Is(err, csvdata.ErrNullPointer) {
+		t.Errorf("ColumnString() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
+	}
+}
+
 func TestWithComma(t *testing.T) {
 	testCases := []struct {
 		sep        rune
@@ -32,12 +51,12 @@ func TestWithComma(t *testing.T) {
 		name       string
 		err        error
 	}{
-		{sep: ',', size: 4, headerFlag: true, inp: strings.NewReader(csv1), name: "Mercury", err: nil},
-		{sep: '\t', size: 4, headerFlag: false, inp: strings.NewReader(tsv1), name: "", err: csvdata.ErrOutOfIndex},
+		{sep: ',', size: 5, headerFlag: true, inp: strings.NewReader(csv1), name: "Mercury", err: nil},
+		{sep: '\t', size: 5, headerFlag: false, inp: strings.NewReader(tsv1), name: "", err: csvdata.ErrOutOfIndex},
 	}
 
 	for _, tc := range testCases {
-		rc := csvdata.New(tc.inp, tc.size, tc.headerFlag).WithComma(tc.sep)
+		rc := csvdata.New(tc.inp, tc.headerFlag).WithComma(tc.sep).WithFieldsPerRecord(tc.size)
 		if err := rc.Next(); err != nil {
 			t.Errorf("Next() is \"%+v\", want nil.", err)
 		} else {
@@ -47,6 +66,9 @@ func TestWithComma(t *testing.T) {
 			}
 			if err == nil && name != tc.name {
 				t.Errorf("ColumnString() is \"%+v\", want \"%+v\".", name, tc.name)
+			}
+			if name = rc.Column("name"); name != tc.name {
+				t.Errorf("Column() is \"%v\", want \"%v\".", name, tc.name)
 			}
 		}
 	}

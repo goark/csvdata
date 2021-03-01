@@ -12,27 +12,35 @@ import (
 //Reader is class of CSV reader
 type Reader struct {
 	reader        *csv.Reader
-	cols          int
 	headerFlag    bool
 	headerStrings []string
 	rowdata       []string
 }
 
 //New function creates a new Reader instance.
-func New(r io.Reader, cols int, headerFlag bool) *Reader {
+func New(r io.Reader, headerFlag bool) *Reader {
 	cr := csv.NewReader(r)
 	cr.Comma = ','
 	cr.LazyQuotes = true       // a quote may appear in an unquoted field and a non-doubled quote may appear in a quoted field.
 	cr.TrimLeadingSpace = true // leading
-	return &Reader{reader: cr, cols: cols, headerFlag: headerFlag}
+	return &Reader{reader: cr, headerFlag: headerFlag}
 }
 
-//WithComma method sets comma property.
+//WithComma method sets Comma property.
 func (r *Reader) WithComma(c rune) *Reader {
 	if r == nil {
 		return nil
 	}
 	r.reader.Comma = c
+	return r
+}
+
+//WithFieldsPerRecord method sets FieldsPerRecord property.
+func (r *Reader) WithFieldsPerRecord(size int) *Reader {
+	if r == nil {
+		return nil
+	}
+	r.reader.FieldsPerRecord = size
 	return r
 }
 
@@ -161,9 +169,6 @@ func (r *Reader) readRecord() ([]string, error) {
 			return nil, errs.Wrap(ErrNoData, errs.WithCause(err))
 		}
 		return nil, errs.Wrap(ErrInvalidRecord, errs.WithCause(err))
-	}
-	if len(elms) < r.cols {
-		return nil, errs.Wrap(ErrInvalidRecord, errs.WithContext("record", elms))
 	}
 	return elms, nil
 }
