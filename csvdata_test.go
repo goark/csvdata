@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	csv1 = `"order","name","mass","distance","habitable","note"
+	csv1 = `"order", name ,"mass","distance","habitable","note"
 1, Mercury, 0.055, 0.4,false,""
 2, Venus, 0.815, 0.7,false,""
 3, Earth, 1.0, 1.0,true,""
@@ -116,7 +116,7 @@ func TestNormal(t *testing.T) {
 			if _, err = rc.ColumnString("foo"); !errors.Is(err, csvdata.ErrOutOfIndex) {
 				t.Errorf("ColumnString() is \"%+v\", want \"%+v\".", err, csvdata.ErrOutOfIndex)
 			}
-			name, err := rc.ColumnString("NAME")
+			name, err := rc.ColumnString("name")
 			if !errors.Is(err, tc.err) {
 				t.Errorf("ColumnString() is \"%+v\", want \"%+v\".", err, tc.err)
 			}
@@ -133,7 +133,7 @@ func TestNormal(t *testing.T) {
 			if _, err = rc.GetBool(5); !errors.Is(err, csvdata.ErrNullPointer) {
 				t.Errorf("GetBool() is \"%+v\", want \"%+v\".", err, strconv.ErrSyntax)
 			}
-			if _, err = rc.ColumnBool("NAME"); !errors.Is(err, strconv.ErrSyntax) && !errors.Is(err, tc.err) {
+			if _, err = rc.ColumnBool("name"); !errors.Is(err, strconv.ErrSyntax) && !errors.Is(err, tc.err) {
 				t.Errorf("ColumnBool() is \"%+v\", want \"%+v\".", err, strconv.ErrSyntax)
 			}
 			flag, err := rc.ColumnBool("habitable")
@@ -147,7 +147,7 @@ func TestNormal(t *testing.T) {
 			if _, err = rc.GetFloat64(5); !errors.Is(err, csvdata.ErrNullPointer) {
 				t.Errorf("GetFloat() is \"%+v\", want \"%+v\".", err, strconv.ErrSyntax)
 			}
-			if _, err = rc.ColumnFloat64("NAME"); !errors.Is(err, strconv.ErrSyntax) && !errors.Is(err, tc.err) {
+			if _, err = rc.ColumnFloat64("name"); !errors.Is(err, strconv.ErrSyntax) && !errors.Is(err, tc.err) {
 				t.Errorf("ColumnFloat() is \"%+v\", want \"%+v\".", err, strconv.ErrSyntax)
 			}
 			mass, err := rc.ColumnFloat64("mass")
@@ -161,7 +161,7 @@ func TestNormal(t *testing.T) {
 			if _, err = rc.GetInt64(5, 10); !errors.Is(err, csvdata.ErrNullPointer) {
 				t.Errorf("GetFloat() is \"%+v\", want \"%+v\".", err, strconv.ErrSyntax)
 			}
-			if _, err = rc.ColumnInt64("NAME", 10); !errors.Is(err, strconv.ErrSyntax) && !errors.Is(err, tc.err) {
+			if _, err = rc.ColumnInt64("name", 10); !errors.Is(err, strconv.ErrSyntax) && !errors.Is(err, tc.err) {
 				t.Errorf("ColumnFloat() is \"%+v\", want \"%+v\".", err, strconv.ErrSyntax)
 			}
 			order, err := rc.ColumnInt64("order", 10)

@@ -101,7 +101,7 @@ func (r *Reader) GetString(i int) (string, error) {
 	if i < 0 || i >= len(r.rowdata) {
 		return "", errs.Wrap(ErrOutOfIndex, errs.WithContext("index", i))
 	}
-	return r.rowdata[i], nil
+	return strings.TrimSpace(r.rowdata[i]), nil
 }
 
 //ColumnString method returns string data in current row.
@@ -203,15 +203,16 @@ func (r *Reader) indexOf(s string) (int, error) {
 	if r == nil {
 		return 0, errs.Wrap(ErrNullPointer)
 	}
-	if len(r.headerStrings) == 0 {
-		return 0, errs.Wrap(ErrOutOfIndex)
-	}
-	s = strings.ToLower(s)
+	s = strings.TrimSpace(s)
 	if i, ok := r.headerMap[s]; ok {
 		return i, nil
 	}
+	if len(r.headerStrings) == 0 {
+		return 0, errs.Wrap(ErrOutOfIndex)
+	}
 	for i, name := range r.headerStrings {
-		if strings.EqualFold(s, name) {
+		name = strings.TrimSpace(name)
+		if s == name {
 			r.headerMap[s] = i
 			return i, nil
 		}
