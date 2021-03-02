@@ -54,6 +54,11 @@ func (r *Reader) Header() ([]string, error) {
 	if r.headerFlag {
 		r.headerFlag = false
 		r.headerStrings, err = r.readRecord()
+		if len(r.headerStrings) > 0 {
+			for i, name := range r.headerStrings {
+				r.headerMap[strings.TrimSpace(name)] = i
+			}
+		}
 	}
 	return r.headerStrings, errs.Wrap(err)
 }
@@ -203,19 +208,8 @@ func (r *Reader) indexOf(s string) (int, error) {
 	if r == nil {
 		return 0, errs.Wrap(ErrNullPointer)
 	}
-	s = strings.TrimSpace(s)
-	if i, ok := r.headerMap[s]; ok {
+	if i, ok := r.headerMap[strings.TrimSpace(s)]; ok {
 		return i, nil
-	}
-	if len(r.headerStrings) == 0 {
-		return 0, errs.Wrap(ErrOutOfIndex)
-	}
-	for i, name := range r.headerStrings {
-		name = strings.TrimSpace(name)
-		if s == name {
-			r.headerMap[s] = i
-			return i, nil
-		}
 	}
 	return 0, errs.Wrap(ErrOutOfIndex)
 }
