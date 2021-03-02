@@ -14,6 +14,7 @@ type Reader struct {
 	reader        *csv.Reader
 	headerFlag    bool
 	headerStrings []string
+	headerMap     map[string]int
 	rowdata       []string
 }
 
@@ -23,7 +24,7 @@ func New(r io.Reader, headerFlag bool) *Reader {
 	cr.Comma = ','
 	cr.LazyQuotes = true       // a quote may appear in an unquoted field and a non-doubled quote may appear in a quoted field.
 	cr.TrimLeadingSpace = true // leading
-	return &Reader{reader: cr, headerFlag: headerFlag}
+	return &Reader{reader: cr, headerFlag: headerFlag, headerMap: map[string]int{}}
 }
 
 //WithComma method sets Comma property.
@@ -205,8 +206,13 @@ func (r *Reader) indexOf(s string) (int, error) {
 	if len(r.headerStrings) == 0 {
 		return 0, errs.Wrap(ErrOutOfIndex)
 	}
+	s = strings.ToLower(s)
+	if i, ok := r.headerMap[s]; ok {
+		return i, nil
+	}
 	for i, name := range r.headerStrings {
 		if strings.EqualFold(s, name) {
+			r.headerMap[s] = i
 			return i, nil
 		}
 	}
