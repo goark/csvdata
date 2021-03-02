@@ -97,8 +97,8 @@ func (r *Reader) GetString(i int) (string, error) {
 	if r == nil {
 		return "", errs.Wrap(ErrNullPointer)
 	}
-	if r.rowdata == nil || i < 0 || i >= len(r.rowdata) {
-		return "", errs.Wrap(ErrOutOfIndex)
+	if i < 0 || i >= len(r.rowdata) {
+		return "", errs.Wrap(ErrOutOfIndex, errs.WithContext("index", i))
 	}
 	return r.rowdata[i], nil
 }
@@ -112,7 +112,7 @@ func (r *Reader) ColumnString(s string) (string, error) {
 	return r.GetString(i)
 }
 
-//GetBool method returns boolean type data in current row.
+//GetBool method returns type bool data in current row.
 func (r *Reader) GetBool(i int) (bool, error) {
 	s, err := r.GetString(i)
 	if err != nil {
@@ -128,7 +128,7 @@ func (r *Reader) GetBool(i int) (bool, error) {
 	return b, nil
 }
 
-//ColumnBool method returns boolean type data in current row.
+//ColumnBool method returns type bool data in current row.
 func (r *Reader) ColumnBool(s string) (bool, error) {
 	i, err := r.indexOf(s)
 	if err != nil {
@@ -137,8 +137,8 @@ func (r *Reader) ColumnBool(s string) (bool, error) {
 	return r.GetBool(i)
 }
 
-//GetFloat method returns float64 type data in current row.
-func (r *Reader) GetFloat(i int, bitSize int) (float64, error) {
+//GetFloat method returns type float64 data in current row.
+func (r *Reader) GetFloat64(i int) (float64, error) {
 	s, err := r.GetString(i)
 	if err != nil {
 		return 0, errs.Wrap(err)
@@ -146,27 +146,52 @@ func (r *Reader) GetFloat(i int, bitSize int) (float64, error) {
 	if len(s) == 0 {
 		return 0, errs.Wrap(ErrNullPointer)
 	}
-	f, err := strconv.ParseFloat(s, bitSize)
+	f, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		return 0, errs.Wrap(err)
 	}
 	return f, nil
 }
 
-//ColumnFloat method returns float64 type data in current row.
-func (r *Reader) ColumnFloat(s string, bitSize int) (float64, error) {
+//ColumnFloat method returns type float64 data in current row.
+func (r *Reader) ColumnFloat64(s string) (float64, error) {
 	i, err := r.indexOf(s)
 	if err != nil {
 		return 0, errs.Wrap(err)
 	}
-	return r.GetFloat(i, bitSize)
+	return r.GetFloat64(i)
+}
+
+//GetInt method returns type int64 data in current row.
+func (r *Reader) GetInt64(i int, base int) (int64, error) {
+	s, err := r.GetString(i)
+	if err != nil {
+		return 0, errs.Wrap(err)
+	}
+	if len(s) == 0 {
+		return 0, errs.Wrap(ErrNullPointer)
+	}
+	n, err := strconv.ParseInt(s, base, 64)
+	if err != nil {
+		return 0, errs.Wrap(err)
+	}
+	return n, nil
+}
+
+//ColumnInt method returns type int64 data in current row.
+func (r *Reader) ColumnInt64(s string, base int) (int64, error) {
+	i, err := r.indexOf(s)
+	if err != nil {
+		return 0, errs.Wrap(err)
+	}
+	return r.GetInt64(i, base)
 }
 
 func (r *Reader) readRecord() ([]string, error) {
 	elms, err := r.reader.Read()
 	if err != nil {
 		if errs.Is(err, io.EOF) {
-			return nil, errs.Wrap(ErrNoData, errs.WithCause(err))
+			return nil, errs.Wrap(err)
 		}
 		return nil, errs.Wrap(ErrInvalidRecord, errs.WithCause(err))
 	}

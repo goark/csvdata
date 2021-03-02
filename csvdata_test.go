@@ -3,23 +3,25 @@ package csvdata_test
 import (
 	"errors"
 	"io"
+	"strconv"
 	"strings"
 	"testing"
+	"testing/iotest"
 
 	"github.com/spiegel-im-spiegel/csvdata"
 )
 
 const (
-	csv1 = `"order","name","mass","distance","habitable"
-1, Mercury, 0.055, 0.4,false
-2, Venus, 0.815, 0.7,false
-3, Earth, 1.0, 1.0,true
-4, Mars, 0.107, 1.5,false
+	csv1 = `"order","name","mass","distance","habitable","note"
+1, Mercury, 0.055, 0.4,false,""
+2, Venus, 0.815, 0.7,false,""
+3, Earth, 1.0, 1.0,true,""
+4, Mars, 0.107, 1.5,false,""
 `
-	tsv1 = `1	 Mercury	 0.055	 0.4	false
-2	 Venus	 0.815	 0.7	false
-3	 Earth	 1.0	 1.0	true
-4	 Mars	 0.107	 1.5	false
+	tsv1 = `1	 Mercury	 0.055	 0.4	false	""
+2	 Venus	 0.815	 0.7	false	""
+3	 Earth	 1.0	 1.0	true	""
+4	 Mars	 0.107	 1.5	false	""
 `
 )
 
@@ -31,28 +33,67 @@ func TestWithNil(t *testing.T) {
 	if _, err := r.Header(); !errors.Is(err, csvdata.ErrNullPointer) {
 		t.Errorf("Header() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
 	}
+	//Row
 	if row := r.Row(); r != nil {
 		t.Errorf("Row() is \"%v\", want nil.", row)
 	}
+	//string
 	if _, err := r.GetString(0); !errors.Is(err, csvdata.ErrNullPointer) {
 		t.Errorf("GetString() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
 	}
-	if _, err := r.GetString(0); !errors.Is(err, csvdata.ErrNullPointer) {
-		t.Errorf("ColumnString() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
+	if s := r.Get(0); s != "" {
+		t.Errorf("Get() is \"%v\", want \"\".", s)
+	}
+	if s := r.Column("foo"); s != "" {
+		t.Errorf("Get() is \"%v\", want \"\".", s)
+	}
+	//bool
+	if _, err := r.GetBool(0); !errors.Is(err, csvdata.ErrNullPointer) {
+		t.Errorf("GetBool() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
+	}
+	//float
+	if _, err := r.GetFloat64(0); !errors.Is(err, csvdata.ErrNullPointer) {
+		t.Errorf("GetFloat() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
+	}
+	//int
+	if _, err := r.GetInt64(0, 10); !errors.Is(err, csvdata.ErrNullPointer) {
+		t.Errorf("GetFloat() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
 	}
 }
 
-func TestWithComma(t *testing.T) {
+func TestErrReader(t *testing.T) {
+	errtest := errors.New("test")
+	r := csvdata.New(iotest.ErrReader(errtest), true).WithComma(',').WithFieldsPerRecord(1)
+	if err := r.Next(); !errors.Is(err, errtest) {
+		t.Errorf("Next() is \"%+v\", want \"%+v\".", err, errtest)
+	}
+	if _, err := r.GetString(0); !errors.Is(err, csvdata.ErrOutOfIndex) {
+		t.Errorf("GetString() is \"%+v\", want \"%+v\".", err, csvdata.ErrOutOfIndex)
+	}
+}
+
+func TestBlankReader(t *testing.T) {
+	r := csvdata.New(strings.NewReader(""), true).WithComma(',').WithFieldsPerRecord(1)
+	if err := r.Next(); !errors.Is(err, io.EOF) {
+		t.Errorf("Next() is \"%+v\", want \"%+v\".", err, io.EOF)
+	}
+}
+
+func TestNormal(t *testing.T) {
 	testCases := []struct {
 		sep        rune
 		size       int
 		headerFlag bool
 		inp        io.Reader
-		name       string
+		name1      string
+		name2      string
+		flag       bool
+		mass       float64
+		order      int64
 		err        error
 	}{
-		{sep: ',', size: 5, headerFlag: true, inp: strings.NewReader(csv1), name: "Mercury", err: nil},
-		{sep: '\t', size: 5, headerFlag: false, inp: strings.NewReader(tsv1), name: "", err: csvdata.ErrOutOfIndex},
+		{sep: ',', size: 6, headerFlag: true, inp: strings.NewReader(csv1), name1: "Mercury", name2: "Mercury", flag: false, mass: 0.055, order: 1, err: nil},
+		{sep: '\t', size: 6, headerFlag: false, inp: strings.NewReader(tsv1), name1: "Mercury", name2: "", flag: false, mass: 0.055, order: 1, err: csvdata.ErrOutOfIndex},
 	}
 
 	for _, tc := range testCases {
@@ -60,15 +101,75 @@ func TestWithComma(t *testing.T) {
 		if err := rc.Next(); err != nil {
 			t.Errorf("Next() is \"%+v\", want nil.", err)
 		} else {
+			//Size
+			if size := len(rc.Row()); size != tc.size {
+				t.Errorf("Size of Row() is %v, want %+v.", size, tc.size)
+			}
+			//index
+			if _, err = rc.GetString(-1); !errors.Is(err, csvdata.ErrOutOfIndex) {
+				t.Errorf("GetString() is \"%+v\", want \"%+v\".", err, csvdata.ErrOutOfIndex)
+			}
+			if _, err = rc.GetString(tc.size); !errors.Is(err, csvdata.ErrOutOfIndex) {
+				t.Errorf("GetString() is \"%+v\", want \"%+v\".", err, csvdata.ErrOutOfIndex)
+			}
+			//string
+			if _, err = rc.ColumnString("foo"); !errors.Is(err, csvdata.ErrOutOfIndex) {
+				t.Errorf("ColumnString() is \"%+v\", want \"%+v\".", err, csvdata.ErrOutOfIndex)
+			}
 			name, err := rc.ColumnString("NAME")
 			if !errors.Is(err, tc.err) {
 				t.Errorf("ColumnString() is \"%+v\", want \"%+v\".", err, tc.err)
 			}
-			if err == nil && name != tc.name {
-				t.Errorf("ColumnString() is \"%+v\", want \"%+v\".", name, tc.name)
+			if err == nil && name != tc.name1 {
+				t.Errorf("ColumnString() is \"%+v\", want \"%+v\".", name, tc.name1)
 			}
-			if name = rc.Column("name"); name != tc.name {
-				t.Errorf("Column() is \"%v\", want \"%v\".", name, tc.name)
+			if name = rc.Get(1); name != tc.name1 {
+				t.Errorf("Get() is \"%v\", want \"%v\".", name, tc.name1)
+			}
+			if name = rc.Column("name"); name != tc.name2 {
+				t.Errorf("Column() is \"%v\", want \"%v\".", name, tc.name2)
+			}
+			//bool
+			if _, err = rc.GetBool(5); !errors.Is(err, csvdata.ErrNullPointer) {
+				t.Errorf("GetBool() is \"%+v\", want \"%+v\".", err, strconv.ErrSyntax)
+			}
+			if _, err = rc.ColumnBool("NAME"); !errors.Is(err, strconv.ErrSyntax) && !errors.Is(err, tc.err) {
+				t.Errorf("ColumnBool() is \"%+v\", want \"%+v\".", err, strconv.ErrSyntax)
+			}
+			flag, err := rc.ColumnBool("habitable")
+			if !errors.Is(err, tc.err) {
+				t.Errorf("ColumnBool() is \"%+v\", want \"%+v\".", err, tc.err)
+			}
+			if err == nil && flag != tc.flag {
+				t.Errorf("ColumnBool() is \"%+v\", want \"%+v\".", flag, tc.flag)
+			}
+			//float
+			if _, err = rc.GetFloat64(5); !errors.Is(err, csvdata.ErrNullPointer) {
+				t.Errorf("GetFloat() is \"%+v\", want \"%+v\".", err, strconv.ErrSyntax)
+			}
+			if _, err = rc.ColumnFloat64("NAME"); !errors.Is(err, strconv.ErrSyntax) && !errors.Is(err, tc.err) {
+				t.Errorf("ColumnFloat() is \"%+v\", want \"%+v\".", err, strconv.ErrSyntax)
+			}
+			mass, err := rc.ColumnFloat64("mass")
+			if !errors.Is(err, tc.err) {
+				t.Errorf("ColumnFloat() is \"%+v\", want \"%+v\".", err, tc.err)
+			}
+			if err == nil && mass != tc.mass {
+				t.Errorf("ColumnFloat() is \"%+v\", want \"%+v\".", mass, tc.mass)
+			}
+			//int
+			if _, err = rc.GetInt64(5, 10); !errors.Is(err, csvdata.ErrNullPointer) {
+				t.Errorf("GetFloat() is \"%+v\", want \"%+v\".", err, strconv.ErrSyntax)
+			}
+			if _, err = rc.ColumnInt64("NAME", 10); !errors.Is(err, strconv.ErrSyntax) && !errors.Is(err, tc.err) {
+				t.Errorf("ColumnFloat() is \"%+v\", want \"%+v\".", err, strconv.ErrSyntax)
+			}
+			order, err := rc.ColumnInt64("order", 10)
+			if !errors.Is(err, tc.err) {
+				t.Errorf("ColumnFloat() is \"%+v\", want \"%+v\".", err, tc.err)
+			}
+			if err == nil && order != tc.order {
+				t.Errorf("ColumnFloat() is \"%+v\", want \"%+v\".", order, tc.order)
 			}
 		}
 	}
