@@ -16,6 +16,7 @@ import "github.com/spiegel-im-spiegel/csvdata"
 ## Usage
 
 ```go
+//go:build run
 // +build run
 
 package main
@@ -35,7 +36,7 @@ import (
 var planets string
 
 func main() {
-	rc := csvdata.New(strings.NewReader(planets), true)
+	rc := csvdata.NewRows(csvdata.New(strings.NewReader(planets)), true)
 	for {
 		if err := rc.Next(); err != nil {
 			if errors.Is(err, io.EOF) {
@@ -87,6 +88,38 @@ Habitable = true
      Name = Mars
      Mass = 0.107
 Habitable = false
+```
+
+### Reading from Excel file
+
+```go
+package exceldata_test
+
+import (
+	"fmt"
+
+	"github.com/spiegel-im-spiegel/csvdata"
+	"github.com/spiegel-im-spiegel/csvdata/exceldata"
+	"github.com/xuri/excelize/v2"
+)
+
+func ExampleNew() {
+	xlsx, err := excelize.OpenFile("testdata/sample.xlsx")
+	if err != nil {
+		return
+	}
+	r, err := exceldata.New(xlsx, 0)
+	if err != nil {
+		return
+	}
+	rc := csvdata.NewRows(r, true)
+	if err := rc.Next(); err != nil {
+		return
+	}
+	fmt.Println(rc.Column("name"))
+	// Output:
+	// Mercury
+}
 ```
 
 ## Modules Requirement Graph

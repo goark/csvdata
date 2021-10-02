@@ -26,20 +26,20 @@ const (
 )
 
 func TestWithNil(t *testing.T) {
-	r := (*csvdata.Reader)(nil).WithComma(',').WithFieldsPerRecord(1)
+	r := csvdata.NewRows((*csvdata.Reader)(nil).WithComma(',').WithFieldsPerRecord(1), true)
 	if err := r.Next(); !errors.Is(err, csvdata.ErrNullPointer) {
 		t.Errorf("Next() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
 	}
-	if _, err := r.Header(); !errors.Is(err, csvdata.ErrNullPointer) {
-		t.Errorf("Header() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
+	if _, err := r.Header(); err != nil {
+		t.Errorf("Header() is \"%+v\", want <nil>.", err)
 	}
 	//Row
-	if row := r.Row(); r != nil {
-		t.Errorf("Row() is \"%v\", want nil.", row)
+	if row := r.Row(); row != nil {
+		t.Errorf("Row() is not nil, want nil.")
 	}
 	//string
-	if _, err := r.GetString(0); !errors.Is(err, csvdata.ErrNullPointer) {
-		t.Errorf("GetString() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
+	if _, err := r.GetString(0); !errors.Is(err, csvdata.ErrOutOfIndex) {
+		t.Errorf("GetString() is \"%+v\", want \"%+v\".", err, csvdata.ErrOutOfIndex)
 	}
 	if s := r.Get(0); s != "" {
 		t.Errorf("Get() is \"%v\", want \"\".", s)
@@ -48,22 +48,22 @@ func TestWithNil(t *testing.T) {
 		t.Errorf("Get() is \"%v\", want \"\".", s)
 	}
 	//bool
-	if _, err := r.GetBool(0); !errors.Is(err, csvdata.ErrNullPointer) {
-		t.Errorf("GetBool() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
+	if _, err := r.GetBool(0); !errors.Is(err, csvdata.ErrOutOfIndex) {
+		t.Errorf("GetBool() is \"%+v\", want \"%+v\".", err, csvdata.ErrOutOfIndex)
 	}
 	//float
-	if _, err := r.GetFloat64(0); !errors.Is(err, csvdata.ErrNullPointer) {
-		t.Errorf("GetFloat() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
+	if _, err := r.GetFloat64(0); !errors.Is(err, csvdata.ErrOutOfIndex) {
+		t.Errorf("GetFloat() is \"%+v\", want \"%+v\".", err, csvdata.ErrOutOfIndex)
 	}
 	//int
-	if _, err := r.GetInt64(0, 10); !errors.Is(err, csvdata.ErrNullPointer) {
-		t.Errorf("GetFloat() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
+	if _, err := r.GetInt64(0, 10); !errors.Is(err, csvdata.ErrOutOfIndex) {
+		t.Errorf("GetFloat() is \"%+v\", want \"%+v\".", err, csvdata.ErrOutOfIndex)
 	}
 }
 
 func TestErrReader(t *testing.T) {
 	errtest := errors.New("test")
-	r := csvdata.New(iotest.ErrReader(errtest), true).WithComma(',').WithFieldsPerRecord(1)
+	r := csvdata.NewRows(csvdata.New(iotest.ErrReader(errtest)).WithComma(',').WithFieldsPerRecord(1), true)
 	if err := r.Next(); !errors.Is(err, errtest) {
 		t.Errorf("Next() is \"%+v\", want \"%+v\".", err, errtest)
 	}
@@ -73,7 +73,7 @@ func TestErrReader(t *testing.T) {
 }
 
 func TestBlankReader(t *testing.T) {
-	r := csvdata.New(strings.NewReader(""), true).WithComma(',').WithFieldsPerRecord(1)
+	r := csvdata.NewRows(csvdata.New(strings.NewReader("")).WithComma(',').WithFieldsPerRecord(1), true)
 	if err := r.Next(); !errors.Is(err, io.EOF) {
 		t.Errorf("Next() is \"%+v\", want \"%+v\".", err, io.EOF)
 	}
@@ -97,7 +97,7 @@ func TestNormal(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		rc := csvdata.New(tc.inp, tc.headerFlag).WithComma(tc.sep).WithFieldsPerRecord(tc.size)
+		rc := csvdata.NewRows(csvdata.New(tc.inp).WithComma(tc.sep).WithFieldsPerRecord(tc.size), tc.headerFlag)
 		if err := rc.Next(); err != nil {
 			t.Errorf("Next() is \"%+v\", want nil.", err)
 		} else {
