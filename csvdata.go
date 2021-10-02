@@ -3,28 +3,22 @@ package csvdata
 import (
 	"encoding/csv"
 	"io"
-	"strconv"
-	"strings"
 
 	"github.com/spiegel-im-spiegel/errs"
 )
 
 //Reader is class of CSV reader
 type Reader struct {
-	reader        *csv.Reader
-	headerFlag    bool
-	headerStrings []string
-	headerMap     map[string]int
-	rowdata       []string
+	reader *csv.Reader
 }
 
 //New function creates a new Reader instance.
-func New(r io.Reader, headerFlag bool) *Reader {
+func New(r io.Reader) *Reader {
 	cr := csv.NewReader(r)
 	cr.Comma = ','
 	cr.LazyQuotes = true       // a quote may appear in an unquoted field and a non-doubled quote may appear in a quoted field.
 	cr.TrimLeadingSpace = true // leading
-	return &Reader{reader: cr, headerFlag: headerFlag, headerMap: map[string]int{}}
+	return &Reader{cr}
 }
 
 //WithComma method sets Comma property.
@@ -45,155 +39,11 @@ func (r *Reader) WithFieldsPerRecord(size int) *Reader {
 	return r
 }
 
-//Header method returns header strings.
-func (r *Reader) Header() ([]string, error) {
+//Read method returns next row data.
+func (r *Reader) Read() ([]string, error) {
 	if r == nil {
 		return nil, errs.Wrap(ErrNullPointer)
 	}
-	var err error
-	if r.headerFlag {
-		r.headerFlag = false
-		r.headerStrings, err = r.readRecord()
-		if len(r.headerStrings) > 0 {
-			for i, name := range r.headerStrings {
-				r.headerMap[strings.TrimSpace(name)] = i
-			}
-		}
-	}
-	return r.headerStrings, errs.Wrap(err)
-}
-
-//Next method gets a next record.
-func (r *Reader) Next() error {
-	if r == nil {
-		return errs.Wrap(ErrNullPointer)
-	}
-	if r.headerFlag {
-		if _, err := r.Header(); err != nil {
-			return errs.Wrap(err)
-		}
-	}
-	var err error
-	r.rowdata, err = r.readRecord()
-	return errs.Wrap(err)
-}
-
-//Row method returns current row data.
-func (r *Reader) Row() []string {
-	if r == nil {
-		return nil
-	}
-	return r.rowdata
-}
-
-//GetString method returns string data in current row.
-func (r *Reader) Get(i int) string {
-	s, _ := r.GetString(i)
-	return s
-}
-
-//GetString method returns string data in current row.
-func (r *Reader) Column(s string) string {
-	cs, _ := r.ColumnString(s)
-	return cs
-}
-
-//GetString method returns string data in current row.
-func (r *Reader) GetString(i int) (string, error) {
-	if r == nil {
-		return "", errs.Wrap(ErrNullPointer)
-	}
-	if i < 0 || i >= len(r.rowdata) {
-		return "", errs.Wrap(ErrOutOfIndex, errs.WithContext("index", i))
-	}
-	return strings.TrimSpace(r.rowdata[i]), nil
-}
-
-//ColumnString method returns string data in current row.
-func (r *Reader) ColumnString(s string) (string, error) {
-	i, err := r.indexOf(s)
-	if err != nil {
-		return "", errs.Wrap(err)
-	}
-	return r.GetString(i)
-}
-
-//GetBool method returns type bool data in current row.
-func (r *Reader) GetBool(i int) (bool, error) {
-	s, err := r.GetString(i)
-	if err != nil {
-		return false, errs.Wrap(err)
-	}
-	if len(s) == 0 {
-		return false, errs.Wrap(ErrNullPointer)
-	}
-	b, err := strconv.ParseBool(s)
-	if err != nil {
-		return false, errs.Wrap(err)
-	}
-	return b, nil
-}
-
-//ColumnBool method returns type bool data in current row.
-func (r *Reader) ColumnBool(s string) (bool, error) {
-	i, err := r.indexOf(s)
-	if err != nil {
-		return false, errs.Wrap(err)
-	}
-	return r.GetBool(i)
-}
-
-//GetFloat method returns type float64 data in current row.
-func (r *Reader) GetFloat64(i int) (float64, error) {
-	s, err := r.GetString(i)
-	if err != nil {
-		return 0, errs.Wrap(err)
-	}
-	if len(s) == 0 {
-		return 0, errs.Wrap(ErrNullPointer)
-	}
-	f, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		return 0, errs.Wrap(err)
-	}
-	return f, nil
-}
-
-//ColumnFloat method returns type float64 data in current row.
-func (r *Reader) ColumnFloat64(s string) (float64, error) {
-	i, err := r.indexOf(s)
-	if err != nil {
-		return 0, errs.Wrap(err)
-	}
-	return r.GetFloat64(i)
-}
-
-//GetInt method returns type int64 data in current row.
-func (r *Reader) GetInt64(i int, base int) (int64, error) {
-	s, err := r.GetString(i)
-	if err != nil {
-		return 0, errs.Wrap(err)
-	}
-	if len(s) == 0 {
-		return 0, errs.Wrap(ErrNullPointer)
-	}
-	n, err := strconv.ParseInt(s, base, 64)
-	if err != nil {
-		return 0, errs.Wrap(err)
-	}
-	return n, nil
-}
-
-//ColumnInt method returns type int64 data in current row.
-func (r *Reader) ColumnInt64(s string, base int) (int64, error) {
-	i, err := r.indexOf(s)
-	if err != nil {
-		return 0, errs.Wrap(err)
-	}
-	return r.GetInt64(i, base)
-}
-
-func (r *Reader) readRecord() ([]string, error) {
 	elms, err := r.reader.Read()
 	if err != nil {
 		if errs.Is(err, io.EOF) {
@@ -202,16 +52,6 @@ func (r *Reader) readRecord() ([]string, error) {
 		return nil, errs.Wrap(ErrInvalidRecord, errs.WithCause(err))
 	}
 	return elms, nil
-}
-
-func (r *Reader) indexOf(s string) (int, error) {
-	if r == nil {
-		return 0, errs.Wrap(ErrNullPointer)
-	}
-	if i, ok := r.headerMap[strings.TrimSpace(s)]; ok {
-		return i, nil
-	}
-	return 0, errs.Wrap(ErrOutOfIndex)
 }
 
 /* Copyright 2021 Spiegel

@@ -3,10 +3,12 @@ package csvdata
 import "errors"
 
 var (
-	ErrNullPointer   = errors.New("null reference instance")
-	ErrNoData        = errors.New("no data")
-	ErrInvalidRecord = errors.New("invalid record")
-	ErrOutOfIndex    = errors.New("out of index")
+	ErrNullPointer      = errors.New("null reference instance")
+	ErrNoData           = errors.New("no data")
+	ErrInvalidRecord    = errors.New("invalid record")
+	ErrOutOfIndex       = errors.New("out of index")
+	ErrInvalidSheetName = errors.New("invalid sheet name in Excel data")
+	ErrInvalidExcelData = errors.New("invalid Excel data")
 )
 
 /* Copyright 2021 Spiegel

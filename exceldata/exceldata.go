@@ -1,0 +1,60 @@
+package exceldata
+
+import (
+	"io"
+
+	"github.com/spiegel-im-spiegel/csvdata"
+	"github.com/spiegel-im-spiegel/errs"
+	"github.com/xuri/excelize/v2"
+)
+
+//Reader is class of Excel data
+type Reader struct {
+	rows *excelize.Rows
+}
+
+var _ csvdata.RowsReader = (*Reader)(nil) //Reader is compatible with csvdata.RowsReader interface
+
+func New(xlsx *excelize.File, sheetIndex int) (*Reader, error) {
+	rows, err := xlsx.Rows(xlsx.GetSheetName(sheetIndex))
+	if err != nil {
+		var errSheet excelize.ErrSheetNotExist
+		if errs.As(err, &errSheet) {
+			return nil, errs.Wrap(csvdata.ErrInvalidSheetName, errs.WithCause(err), errs.WithContext("sheetIndex", sheetIndex), errs.WithContext("SheetName", errSheet.SheetName))
+		}
+		return nil, errs.Wrap(err)
+	}
+	return &Reader{rows}, nil
+}
+
+func (r *Reader) Read() ([]string, error) {
+	if r == nil {
+		return nil, errs.Wrap(csvdata.ErrNullPointer)
+	}
+	if r.rows.Next() {
+		cols, err := r.rows.Columns()
+		return cols, errs.Wrap(err)
+	}
+	if err := r.rows.Error(); err != nil {
+		if errs.Is(err, io.EOF) {
+			return nil, errs.Wrap(err)
+		}
+		return nil, errs.Wrap(csvdata.ErrInvalidRecord, errs.WithCause(err))
+	}
+	return nil, errs.Wrap(io.EOF)
+}
+
+/* Copyright 2021 Spiegel
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * 	http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
