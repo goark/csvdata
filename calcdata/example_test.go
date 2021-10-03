@@ -1,19 +1,19 @@
-package exceldata_test
+package calcdata_test
 
 import (
 	"fmt"
 
 	"github.com/spiegel-im-spiegel/csvdata"
-	"github.com/spiegel-im-spiegel/csvdata/exceldata"
+	"github.com/spiegel-im-spiegel/csvdata/calcdata"
 )
 
 func ExampleNew() {
-	xlsx, err := exceldata.OpenFile("testdata/sample.xlsx", "")
+	ods, err := calcdata.OpenFile("testdata/sample.ods")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	r, err := exceldata.New(xlsx, "")
+	r, err := calcdata.New(ods, "")
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -15,18 +15,32 @@ type Reader struct {
 
 var _ csvdata.RowsReader = (*Reader)(nil) //Reader is compatible with csvdata.RowsReader interface
 
-func New(xlsx *excelize.File, sheetIndex int) (*Reader, error) {
-	rows, err := xlsx.Rows(xlsx.GetSheetName(sheetIndex))
+//OpenFile returns Excel file instance.
+func OpenFile(path, password string) (*excelize.File, error) {
+	xlsx, err := excelize.OpenFile(path, excelize.Options{Password: password})
+	if err != nil {
+		return xlsx, errs.Wrap(err, errs.WithContext("path", path))
+	}
+	return xlsx, nil
+}
+
+//New function creates a new Reader instance.
+func New(xlsx *excelize.File, sheetName string) (*Reader, error) {
+	if len(sheetName) == 0 {
+		sheetName = xlsx.GetSheetName(0)
+	}
+	rows, err := xlsx.Rows(sheetName)
 	if err != nil {
 		var errSheet excelize.ErrSheetNotExist
 		if errs.As(err, &errSheet) {
-			return nil, errs.Wrap(csvdata.ErrInvalidSheetName, errs.WithCause(err), errs.WithContext("sheetIndex", sheetIndex), errs.WithContext("SheetName", errSheet.SheetName))
+			return nil, errs.Wrap(csvdata.ErrInvalidSheetName, errs.WithCause(err), errs.WithContext("SheetName", errSheet.SheetName))
 		}
 		return nil, errs.Wrap(err)
 	}
 	return &Reader{rows}, nil
 }
 
+//Read method returns next row data.
 func (r *Reader) Read() ([]string, error) {
 	if r == nil {
 		return nil, errs.Wrap(csvdata.ErrNullPointer)
@@ -42,6 +56,11 @@ func (r *Reader) Read() ([]string, error) {
 		return nil, errs.Wrap(csvdata.ErrInvalidRecord, errs.WithCause(err))
 	}
 	return nil, errs.Wrap(io.EOF)
+}
+
+//Close method is dummy.
+func (r *Reader) Close() error {
+	return nil
 }
 
 /* Copyright 2021 Spiegel

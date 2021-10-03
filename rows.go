@@ -7,10 +7,13 @@ import (
 	"github.com/spiegel-im-spiegel/errs"
 )
 
+//RowsReader is interface type for reading columns in a row.
 type RowsReader interface {
 	Read() ([]string, error)
+	Close() error
 }
 
+//Rows is a accesser for row-column data set.
 type Rows struct {
 	reader        RowsReader
 	headerFlag    bool
@@ -169,6 +172,11 @@ func (r *Rows) ColumnInt64(s string, base int) (int64, error) {
 		return 0, errs.Wrap(err)
 	}
 	return r.GetInt64(i, base)
+}
+
+//Close method is closing RowsReader instance.
+func (r *Rows) Close() error {
+	return r.reader.Close()
 }
 
 func (r *Rows) indexOf(s string) (int, error) {
