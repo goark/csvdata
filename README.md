@@ -16,78 +16,31 @@ import "github.com/spiegel-im-spiegel/csvdata"
 ## Usage
 
 ```go
-//go:build run
-// +build run
-
-package main
+package csvdata_test
 
 import (
-	_ "embed"
-	"errors"
 	"fmt"
-	"io"
-	"os"
-	"strings"
 
 	"github.com/spiegel-im-spiegel/csvdata"
 )
 
-//go:embed sample.csv
-var planets string
-
-func main() {
-	rc := csvdata.NewRows(csvdata.New(strings.NewReader(planets)), true)
-	for {
-		if err := rc.Next(); err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-		order, err := rc.ColumnInt64("order", 10)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-		fmt.Println("    Order =", order)
-		fmt.Println("     Name =", rc.Column("name"))
-		mass, err := rc.ColumnFloat64("mass")
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-		fmt.Println("     Mass =", mass)
-		habitable, err := rc.ColumnBool("habitable")
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return
-		}
-		fmt.Println("Habitable =", habitable)
+func ExampleNew() {
+	file, err := csvdata.OpenFile("testdata/sample.csv")
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
+	rc := csvdata.NewRows(csvdata.New(file), true)
+	defer rc.Close()
+
+	if err := rc.Next(); err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(rc.Column("name"))
+	// Output:
+	// Mercury
 }
-```
-
-Running sample.go...
-
-```
-$ go run sample.go
-    Order = 1
-     Name = Mercury
-     Mass = 0.055
-Habitable = false
-    Order = 2
-     Name = Venus
-     Mass = 0.815
-Habitable = false
-    Order = 3
-     Name = Earth
-     Mass = 1
-Habitable = true
-    Order = 4
-     Name = Mars
-     Mass = 0.107
-Habitable = false
 ```
 
 ### Reading from Excel file
@@ -100,20 +53,60 @@ import (
 
 	"github.com/spiegel-im-spiegel/csvdata"
 	"github.com/spiegel-im-spiegel/csvdata/exceldata"
-	"github.com/xuri/excelize/v2"
 )
 
 func ExampleNew() {
-	xlsx, err := excelize.OpenFile("testdata/sample.xlsx")
+	xlsx, err := exceldata.OpenFile("testdata/sample.xlsx", "")
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
-	r, err := exceldata.New(xlsx, 0)
+	r, err := exceldata.New(xlsx, "")
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
 	rc := csvdata.NewRows(r, true)
+	defer rc.Close() //dummy
+
 	if err := rc.Next(); err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(rc.Column("name"))
+	// Output:
+	// Mercury
+}
+```
+
+### Reading from LibreOffice Calc file
+
+```go
+package calcdata_test
+
+import (
+	"fmt"
+
+	"github.com/spiegel-im-spiegel/csvdata"
+	"github.com/spiegel-im-spiegel/csvdata/calcdata"
+)
+
+func ExampleNew() {
+	ods, err := calcdata.OpenFile("testdata/sample.ods")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	r, err := calcdata.New(ods, "")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	rc := csvdata.NewRows(r, true)
+	defer rc.Close() //dummy
+
+	if err := rc.Next(); err != nil {
+		fmt.Println(err)
 		return
 	}
 	fmt.Println(rc.Column("name"))

@@ -27,6 +27,7 @@ const (
 
 func TestWithNil(t *testing.T) {
 	r := csvdata.NewRows((*csvdata.Reader)(nil).WithComma(',').WithFieldsPerRecord(1), true)
+	defer r.Close() //dummy
 	if err := r.Next(); !errors.Is(err, csvdata.ErrNullPointer) {
 		t.Errorf("Next() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
 	}
@@ -64,6 +65,7 @@ func TestWithNil(t *testing.T) {
 func TestErrReader(t *testing.T) {
 	errtest := errors.New("test")
 	r := csvdata.NewRows(csvdata.New(iotest.ErrReader(errtest)).WithComma(',').WithFieldsPerRecord(1), true)
+	defer r.Close() //dummy
 	if err := r.Next(); !errors.Is(err, errtest) {
 		t.Errorf("Next() is \"%+v\", want \"%+v\".", err, errtest)
 	}
@@ -74,6 +76,7 @@ func TestErrReader(t *testing.T) {
 
 func TestBlankReader(t *testing.T) {
 	r := csvdata.NewRows(csvdata.New(strings.NewReader("")).WithComma(',').WithFieldsPerRecord(1), true)
+	defer r.Close() //dummy
 	if err := r.Next(); !errors.Is(err, io.EOF) {
 		t.Errorf("Next() is \"%+v\", want \"%+v\".", err, io.EOF)
 	}

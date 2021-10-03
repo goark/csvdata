@@ -1,25 +1,19 @@
-package exceldata_test
+package csvdata_test
 
 import (
 	"fmt"
 
 	"github.com/spiegel-im-spiegel/csvdata"
-	"github.com/spiegel-im-spiegel/csvdata/exceldata"
 )
 
 func ExampleNew() {
-	xlsx, err := exceldata.OpenFile("testdata/sample.xlsx", "")
+	file, err := csvdata.OpenFile("testdata/sample.csv")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	r, err := exceldata.New(xlsx, "")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	rc := csvdata.NewRows(r, true)
-	defer rc.Close() //dummy
+	rc := csvdata.NewRows(csvdata.New(file), true)
+	defer rc.Close()
 
 	if err := rc.Next(); err != nil {
 		fmt.Println(err)

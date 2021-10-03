@@ -3,6 +3,7 @@ package csvdata
 import (
 	"encoding/csv"
 	"io"
+	"os"
 
 	"github.com/spiegel-im-spiegel/errs"
 )
@@ -10,6 +11,18 @@ import (
 //Reader is class of CSV reader
 type Reader struct {
 	reader *csv.Reader
+	closer func() error
+}
+
+var _ RowsReader = (*Reader)(nil) //Reader is compatible with RowsReader interface
+
+//OpenFile returns CSV file Reader.
+func OpenFile(path string) (*os.File, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, errs.Wrap(err, errs.WithContext("path", path))
+	}
+	return file, nil
 }
 
 //New function creates a new Reader instance.
@@ -18,7 +31,11 @@ func New(r io.Reader) *Reader {
 	cr.Comma = ','
 	cr.LazyQuotes = true       // a quote may appear in an unquoted field and a non-doubled quote may appear in a quoted field.
 	cr.TrimLeadingSpace = true // leading
-	return &Reader{cr}
+	closer := func() error { return nil }
+	if c, ok := r.(io.Closer); ok {
+		closer = c.Close
+	}
+	return &Reader{reader: cr, closer: closer}
 }
 
 //WithComma method sets Comma property.
@@ -52,6 +69,13 @@ func (r *Reader) Read() ([]string, error) {
 		return nil, errs.Wrap(ErrInvalidRecord, errs.WithCause(err))
 	}
 	return elms, nil
+}
+
+func (r *Reader) Close() error {
+	if r == nil || r.closer == nil {
+		return nil
+	}
+	return r.closer()
 }
 
 /* Copyright 2021 Spiegel

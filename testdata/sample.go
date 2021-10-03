@@ -19,6 +19,7 @@ var planets string
 
 func main() {
 	rc := csvdata.NewRows(csvdata.New(strings.NewReader(planets)), true)
+	defer rc.Close() //dummy
 	for {
 		if err := rc.Next(); err != nil {
 			if errors.Is(err, io.EOF) {
