@@ -1,6 +1,7 @@
 package csvdata
 
 import (
+	"database/sql"
 	"strconv"
 	"strings"
 
@@ -87,6 +88,18 @@ func (r *Rows) ColumnString(s string) (string, error) {
 	return r.GetString(i)
 }
 
+//ColumnNullString method returns ql.NullString data in current row.
+func (r *Rows) ColumnNullString(s string) (sql.NullString, error) {
+	str, err := r.ColumnString(s)
+	if err != nil {
+		if errs.Is(err, ErrNullPointer) {
+			err = nil
+		}
+		return sql.NullString{Valid: false}, errs.Wrap(err)
+	}
+	return sql.NullString{String: str, Valid: len(str) > 0}, nil
+}
+
 //GetString method returns string data in current row.
 func (r Rows) Get(i int) string {
 	s, _ := r.GetString(i)
@@ -124,6 +137,18 @@ func (r *Rows) ColumnBool(s string) (bool, error) {
 	return r.GetBool(i)
 }
 
+//ColumnNullBool method returns sql.NullBool data in current row.
+func (r *Rows) ColumnNullBool(s string) (sql.NullBool, error) {
+	res, err := r.ColumnBool(s)
+	if err != nil {
+		if errs.Is(err, ErrNullPointer) {
+			err = nil
+		}
+		return sql.NullBool{Valid: false}, errs.Wrap(err)
+	}
+	return sql.NullBool{Bool: res, Valid: true}, nil
+}
+
 //GetFloat method returns type float64 data in current row.
 func (r *Rows) GetFloat64(i int) (float64, error) {
 	s, err := r.GetString(i)
@@ -149,6 +174,18 @@ func (r *Rows) ColumnFloat64(s string) (float64, error) {
 	return r.GetFloat64(i)
 }
 
+//ColumnNullFloat64 method returns sql.NullFloat64 data in current row.
+func (r *Rows) ColumnNullFloat64(s string) (sql.NullFloat64, error) {
+	res, err := r.ColumnFloat64(s)
+	if err != nil {
+		if errs.Is(err, ErrNullPointer) {
+			err = nil
+		}
+		return sql.NullFloat64{Valid: false}, errs.Wrap(err)
+	}
+	return sql.NullFloat64{Float64: res, Valid: true}, nil
+}
+
 //GetInt method returns type int64 data in current row.
 func (r *Rows) GetInt64(i int, base int) (int64, error) {
 	s, err := r.GetString(i)
@@ -172,6 +209,45 @@ func (r *Rows) ColumnInt64(s string, base int) (int64, error) {
 		return 0, errs.Wrap(err)
 	}
 	return r.GetInt64(i, base)
+}
+
+//ColumnNullByte method returns sql.NullByte data in current row.
+func (r *Rows) ColumnNullByte(s string, base int) (sql.NullByte, error) {
+	res, err := r.ColumnNullInt64(s, base)
+	if err != nil {
+		return sql.NullByte{Valid: false}, errs.Wrap(err)
+	}
+	return sql.NullByte{Byte: byte(res.Int64), Valid: true}, nil
+}
+
+//ColumnNullInt16 method returns sql.NullFloat64 data in current row.
+func (r *Rows) ColumnNullInt16(s string, base int) (sql.NullInt16, error) {
+	res, err := r.ColumnNullInt64(s, base)
+	if err != nil {
+		return sql.NullInt16{Valid: false}, errs.Wrap(err)
+	}
+	return sql.NullInt16{Int16: int16(res.Int64), Valid: true}, nil
+}
+
+//ColumnNullInt32 method returns sql.NullInt32 data in current row.
+func (r *Rows) ColumnNullInt32(s string, base int) (sql.NullInt32, error) {
+	res, err := r.ColumnNullInt64(s, base)
+	if err != nil {
+		return sql.NullInt32{Valid: false}, errs.Wrap(err)
+	}
+	return sql.NullInt32{Int32: int32(res.Int64), Valid: true}, nil
+}
+
+//ColumnNullInt64 method returns sql.NullInt64 data in current row.
+func (r *Rows) ColumnNullInt64(s string, base int) (sql.NullInt64, error) {
+	res, err := r.ColumnInt64(s, base)
+	if err != nil {
+		if errs.Is(err, ErrNullPointer) {
+			err = nil
+		}
+		return sql.NullInt64{Valid: false}, errs.Wrap(err)
+	}
+	return sql.NullInt64{Int64: res, Valid: true}, nil
 }
 
 //Close method is closing RowsReader instance.
