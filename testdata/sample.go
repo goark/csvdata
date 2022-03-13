@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spiegel-im-spiegel/csvdata"
+	"github.com/goark/csvdata"
 )
 
 //go:embed sample.csv

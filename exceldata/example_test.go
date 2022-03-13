@@ -3,8 +3,8 @@ package exceldata_test
 import (
 	"fmt"
 
-	"github.com/spiegel-im-spiegel/csvdata"
-	"github.com/spiegel-im-spiegel/csvdata/exceldata"
+	"github.com/goark/csvdata"
+	"github.com/goark/csvdata/exceldata"
 )
 
 func ExampleNew() {

@@ -1,11 +1,11 @@
-module github.com/spiegel-im-spiegel/csvdata
+module github.com/goark/csvdata
 
 go 1.17
 
 require (
+	github.com/goark/errs v1.1.0
 	github.com/knieriem/odf v0.1.0
-	github.com/spiegel-im-spiegel/errs v1.0.5
-	github.com/xuri/excelize/v2 v2.4.1
+	github.com/xuri/excelize/v2 v2.5.0
 )
 
 require (

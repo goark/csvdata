@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"io"
 
+	"github.com/goark/csvdata"
+	"github.com/goark/errs"
 	"github.com/knieriem/odf/ods"
-	"github.com/spiegel-im-spiegel/csvdata"
-	"github.com/spiegel-im-spiegel/errs"
 )
 
 //Reader is class of LibreOffice Calc data

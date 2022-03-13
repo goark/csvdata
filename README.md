@@ -1,16 +1,18 @@
 # [csvdata] -- Reading CSV Data
 
-[![check vulns](https://github.com/spiegel-im-spiegel/csvdata/workflows/vulns/badge.svg)](https://github.com/spiegel-im-spiegel/csvdata/actions)
-[![lint status](https://github.com/spiegel-im-spiegel/csvdata/workflows/lint/badge.svg)](https://github.com/spiegel-im-spiegel/csvdata/actions)
-[![GitHub license](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://raw.githubusercontent.com/spiegel-im-spiegel/csvdata/master/LICENSE)
-[![GitHub release](https://img.shields.io/github/release/spiegel-im-spiegel/csvdata.svg)](https://github.com/spiegel-im-spiegel/csvdata/releases/latest)
+[![check vulns](https://github.com/goark/csvdata/workflows/vulns/badge.svg)](https://github.com/goark/csvdata/actions)
+[![lint status](https://github.com/goark/csvdata/workflows/lint/badge.svg)](https://github.com/goark/csvdata/actions)
+[![GitHub license](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://raw.githubusercontent.com/goark/csvdata/master/LICENSE)
+[![GitHub release](https://img.shields.io/github/release/goark/csvdata.svg)](https://github.com/goark/csvdata/releases/latest)
 
 This package is required Go 1.16 or later.
+
+**Migrated repository to [github.com/goark/csvdata][csvdata]**
 
 ## Import
 
 ```go
-import "github.com/spiegel-im-spiegel/csvdata"
+import "github.com/goark/csvdata"
 ```
 
 ## Usage
@@ -21,7 +23,7 @@ package csvdata_test
 import (
 	"fmt"
 
-	"github.com/spiegel-im-spiegel/csvdata"
+	"github.com/goark/csvdata"
 )
 
 func ExampleNew() {
@@ -51,8 +53,8 @@ package exceldata_test
 import (
 	"fmt"
 
-	"github.com/spiegel-im-spiegel/csvdata"
-	"github.com/spiegel-im-spiegel/csvdata/exceldata"
+	"github.com/goark/csvdata"
+	"github.com/goark/csvdata/exceldata"
 )
 
 func ExampleNew() {
@@ -87,8 +89,8 @@ package calcdata_test
 import (
 	"fmt"
 
-	"github.com/spiegel-im-spiegel/csvdata"
-	"github.com/spiegel-im-spiegel/csvdata/calcdata"
+	"github.com/goark/csvdata"
+	"github.com/goark/csvdata/calcdata"
 )
 
 func ExampleNew() {
@@ -119,4 +121,4 @@ func ExampleNew() {
 
 [![dependency.png](./dependency.png)](./dependency.png)
 
-[csvdata]: https://github.com/spiegel-im-spiegel/csvdata "spiegel-im-spiegel/csvdata: Reading CSV Data"
+[csvdata]: https://github.com/goark/csvdata "goark/csvdata: Reading CSV Data"
