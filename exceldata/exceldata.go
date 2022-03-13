@@ -3,8 +3,8 @@ package exceldata
 import (
 	"io"
 
-	"github.com/spiegel-im-spiegel/csvdata"
-	"github.com/spiegel-im-spiegel/errs"
+	"github.com/goark/csvdata"
+	"github.com/goark/errs"
 	"github.com/xuri/excelize/v2"
 )
 

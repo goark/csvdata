@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/spiegel-im-spiegel/errs"
+	"github.com/goark/errs"
 )
 
 //Reader is class of CSV reader

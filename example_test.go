@@ -3,7 +3,7 @@ package csvdata_test
 import (
 	"fmt"
 
-	"github.com/spiegel-im-spiegel/csvdata"
+	"github.com/goark/csvdata"
 )
 
 func ExampleNew() {
