@@ -2,6 +2,7 @@ package csvdata
 
 import (
 	"database/sql"
+	"math"
 	"strconv"
 	"strings"
 
@@ -217,6 +218,9 @@ func (r *Rows) ColumnNullByte(s string, base int) (sql.NullByte, error) {
 	if err != nil {
 		return sql.NullByte{Valid: false}, errs.Wrap(err)
 	}
+	if res.Valid && (res.Int64 < 0 || res.Int64 > math.MaxUint8) {
+		return sql.NullByte{Valid: false}, errs.Wrap(strconv.ErrRange)
+	}
 	return sql.NullByte{Byte: byte(res.Int64), Valid: true}, nil
 }
 
@@ -226,6 +230,9 @@ func (r *Rows) ColumnNullInt16(s string, base int) (sql.NullInt16, error) {
 	if err != nil {
 		return sql.NullInt16{Valid: false}, errs.Wrap(err)
 	}
+	if res.Valid && (res.Int64 < math.MinInt16 || res.Int64 > math.MaxInt16) {
+		return sql.NullInt16{Valid: false}, errs.Wrap(strconv.ErrRange)
+	}
 	return sql.NullInt16{Int16: int16(res.Int64), Valid: true}, nil
 }
 
@@ -234,6 +241,9 @@ func (r *Rows) ColumnNullInt32(s string, base int) (sql.NullInt32, error) {
 	res, err := r.ColumnNullInt64(s, base)
 	if err != nil {
 		return sql.NullInt32{Valid: false}, errs.Wrap(err)
+	}
+	if res.Valid && (res.Int64 < math.MinInt32 || res.Int64 > math.MaxInt32) {
+		return sql.NullInt32{Valid: false}, errs.Wrap(strconv.ErrRange)
 	}
 	return sql.NullInt32{Int32: int32(res.Int64), Valid: true}, nil
 }
@@ -265,7 +275,7 @@ func (r *Rows) indexOf(s string) (int, error) {
 	return 0, errs.Wrap(ErrOutOfIndex)
 }
 
-/* Copyright 2021 Spiegel
+/* Copyright 2021-2022 Spiegel
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
