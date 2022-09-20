@@ -4,7 +4,7 @@ import "errors"
 
 var (
 	ErrNullPointer      = errors.New("null reference instance")
-	ErrNoData           = errors.New("no data")
+	ErrNullValue        = errors.New("null value")
 	ErrInvalidRecord    = errors.New("invalid record")
 	ErrOutOfIndex       = errors.New("out of index")
 	ErrInvalidSheetName = errors.New("invalid sheet name in Excel data")

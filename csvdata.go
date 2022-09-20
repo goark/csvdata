@@ -8,7 +8,7 @@ import (
 	"github.com/goark/errs"
 )
 
-//Reader is class of CSV reader
+// Reader is class of CSV reader
 type Reader struct {
 	reader *csv.Reader
 	closer func() error
@@ -16,7 +16,7 @@ type Reader struct {
 
 var _ RowsReader = (*Reader)(nil) //Reader is compatible with RowsReader interface
 
-//OpenFile returns CSV file Reader.
+// OpenFile returns CSV file Reader.
 func OpenFile(path string) (*os.File, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -25,7 +25,7 @@ func OpenFile(path string) (*os.File, error) {
 	return file, nil
 }
 
-//New function creates a new Reader instance.
+// New function creates a new Reader instance.
 func New(r io.Reader) *Reader {
 	cr := csv.NewReader(r)
 	cr.Comma = ','
@@ -38,7 +38,12 @@ func New(r io.Reader) *Reader {
 	return &Reader{reader: cr, closer: closer}
 }
 
-//WithComma method sets Comma property.
+// LazyQuotes returns LazyQuotes option.
+func (r *Reader) LazyQuotes() bool {
+	return r.reader.LazyQuotes
+}
+
+// WithComma method sets Comma property.
 func (r *Reader) WithComma(c rune) *Reader {
 	if r == nil {
 		return nil
@@ -47,7 +52,25 @@ func (r *Reader) WithComma(c rune) *Reader {
 	return r
 }
 
-//WithFieldsPerRecord method sets FieldsPerRecord property.
+// WithLazyQuotes method sets LazyQuotes property.
+func (r *Reader) WithLazyQuotes(mode bool) *Reader {
+	if r == nil {
+		return nil
+	}
+	r.reader.LazyQuotes = mode
+	return r
+}
+
+// WithTrimLeadingSpace method sets TrimLeadingSpace property.
+func (r *Reader) WithTrimLeadingSpace(mode bool) *Reader {
+	if r == nil {
+		return nil
+	}
+	r.reader.TrimLeadingSpace = mode
+	return r
+}
+
+// WithFieldsPerRecord method sets FieldsPerRecord property.
 func (r *Reader) WithFieldsPerRecord(size int) *Reader {
 	if r == nil {
 		return nil
@@ -56,7 +79,7 @@ func (r *Reader) WithFieldsPerRecord(size int) *Reader {
 	return r
 }
 
-//Read method returns next row data.
+// Read method returns next row data.
 func (r *Reader) Read() ([]string, error) {
 	if r == nil {
 		return nil, errs.Wrap(ErrNullPointer)

@@ -8,14 +8,14 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-//Reader is class of Excel data
+// Reader is class of Excel data
 type Reader struct {
 	rows *excelize.Rows
 }
 
 var _ csvdata.RowsReader = (*Reader)(nil) //Reader is compatible with csvdata.RowsReader interface
 
-//OpenFile returns Excel file instance.
+// OpenFile returns Excel file instance.
 func OpenFile(path, password string) (*excelize.File, error) {
 	xlsx, err := excelize.OpenFile(path, excelize.Options{Password: password})
 	if err != nil {
@@ -24,7 +24,7 @@ func OpenFile(path, password string) (*excelize.File, error) {
 	return xlsx, nil
 }
 
-//New function creates a new Reader instance.
+// New function creates a new Reader instance.
 func New(xlsx *excelize.File, sheetName string) (*Reader, error) {
 	if len(sheetName) == 0 {
 		sheetName = xlsx.GetSheetName(0)
@@ -40,7 +40,12 @@ func New(xlsx *excelize.File, sheetName string) (*Reader, error) {
 	return &Reader{rows}, nil
 }
 
-//Read method returns next row data.
+// LazyQuotes returns true.
+func (r *Reader) LazyQuotes() bool {
+	return true
+}
+
+// Read method returns next row data.
 func (r *Reader) Read() ([]string, error) {
 	if r == nil {
 		return nil, errs.Wrap(csvdata.ErrNullPointer)
@@ -58,7 +63,7 @@ func (r *Reader) Read() ([]string, error) {
 	return nil, errs.Wrap(io.EOF)
 }
 
-//Close method is dummy.
+// Close method is dummy.
 func (r *Reader) Close() error {
 	return nil
 }
