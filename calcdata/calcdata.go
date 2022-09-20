@@ -9,7 +9,7 @@ import (
 	"github.com/knieriem/odf/ods"
 )
 
-//Reader is class of LibreOffice Calc data
+// Reader is class of LibreOffice Calc data
 type Reader struct {
 	table          *ods.Table
 	offset, repeat int
@@ -17,7 +17,7 @@ type Reader struct {
 
 var _ csvdata.RowsReader = (*Reader)(nil) //Reader is compatible with csvdata.RowsReader interface
 
-//OpenFile returns Calc file instance.
+// OpenFile returns Calc file instance.
 func OpenFile(path string) (*ods.Doc, error) {
 	doc, err := openFile(path)
 	if err != nil {
@@ -26,13 +26,18 @@ func OpenFile(path string) (*ods.Doc, error) {
 	return doc, nil
 }
 
-//New function creates a new Reader instance.
+// New function creates a new Reader instance.
 func New(doc *ods.Doc, sheetName string) (*Reader, error) {
 	index := sheetIndex(doc, sheetName)
 	if index < 0 {
 		return nil, errs.Wrap(csvdata.ErrInvalidSheetName, errs.WithContext("sheetName", sheetName))
 	}
 	return &Reader{table: &doc.Table[index]}, nil
+}
+
+// LazyQuotes returns true.
+func (r *Reader) LazyQuotes() bool {
+	return true
 }
 
 func (r *Reader) Read() ([]string, error) {
@@ -80,7 +85,7 @@ func sheetIndex(doc *ods.Doc, s string) int {
 	return -1
 }
 
-//Close method is dummy.
+// Close method is dummy.
 func (r *Reader) Close() error {
 	return nil
 }
