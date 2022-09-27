@@ -5,6 +5,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/goark/errs"
 )
@@ -13,6 +14,7 @@ import (
 type RowsReader interface {
 	Read() ([]string, error)
 	Close() error
+	TrimSpace() bool
 	LazyQuotes() bool
 }
 
@@ -27,6 +29,11 @@ type Rows struct {
 
 func NewRows(rr RowsReader, headerFlag bool) *Rows {
 	return &Rows{reader: rr, headerFlag: headerFlag, headerMap: map[string]int{}}
+}
+
+// TrimSpace returns TrimSpace option value.
+func (r *Rows) TrimSpace() bool {
+	return r.reader.TrimSpace()
 }
 
 // LazyQuotes returns LazyQuotes option value.
@@ -83,7 +90,10 @@ func (r *Rows) GetString(i int) (string, error) {
 	if i < 0 || i >= len(r.rowdata) {
 		return "", errs.Wrap(ErrOutOfIndex, errs.WithContext("index", i))
 	}
-	s := strings.TrimSpace(r.rowdata[i])
+	s := r.rowdata[i]
+	if r.TrimSpace() {
+		s = strings.TrimSpace(s)
+	}
 	if r.LazyQuotes() {
 		return s, nil
 	}
@@ -147,6 +157,9 @@ func (r *Rows) GetBool(i int) (bool, error) {
 	if err != nil {
 		return false, errs.Wrap(err)
 	}
+	if !r.LazyQuotes() {
+		s = strings.TrimSpace(s)
+	}
 	if len(s) == 0 {
 		return false, errs.Wrap(ErrNullValue)
 	}
@@ -188,6 +201,9 @@ func (r *Rows) GetFloat64(i int) (float64, error) {
 	if err != nil {
 		return 0, errs.Wrap(err)
 	}
+	if !r.LazyQuotes() {
+		s = strings.TrimSpace(s)
+	}
 	if len(s) == 0 {
 		return 0, errs.Wrap(ErrNullValue)
 	}
@@ -228,6 +244,9 @@ func (r *Rows) GetInt64(i int, base int) (int64, error) {
 	s, err := r.GetString(i)
 	if err != nil {
 		return 0, errs.Wrap(err)
+	}
+	if !r.LazyQuotes() {
+		s = strings.TrimSpace(s)
 	}
 	if len(s) == 0 {
 		return 0, errs.Wrap(ErrNullValue)
@@ -349,6 +368,53 @@ func (r *Rows) ColumnByte(s string, base int) (byte, error) {
 		return res.Byte, nil
 	}
 	return 0, errs.Wrap(ErrNullValue)
+}
+
+// GetTime method returns type time.Time data in current row.
+func (r *Rows) GetTime(i int, layout string) (time.Time, error) {
+	s, err := r.GetString(i)
+	if err != nil {
+		return time.Time{}, errs.Wrap(err)
+	}
+	if !r.LazyQuotes() {
+		s = strings.TrimSpace(s)
+	}
+	if len(s) == 0 {
+		return time.Time{}, errs.Wrap(ErrNullValue)
+	}
+	if len(layout) == 0 {
+		layout = time.RFC3339
+	}
+	tm, err := time.Parse(layout, s)
+	if err != nil {
+		return time.Time{}, errs.Wrap(err)
+	}
+	return tm, nil
+}
+
+// ColumnNullTime method returns sql.NullTime data in current row.
+func (r *Rows) ColumnNullTime(s, layout string) (sql.NullTime, error) {
+	i, err := r.indexOf(s)
+	if err != nil {
+		return sql.NullTime{}, errs.Wrap(err)
+	}
+	res, err := r.GetTime(i, layout)
+	if err != nil && !errs.Is(err, ErrNullValue) {
+		return sql.NullTime{}, errs.Wrap(err)
+	}
+	return sql.NullTime{Time: res, Valid: err == nil}, nil
+}
+
+// ColumnTime method returns type ime.Time data in current row.
+func (r *Rows) ColumnTime(s, layout string) (time.Time, error) {
+	res, err := r.ColumnNullTime(s, layout)
+	if err != nil {
+		return time.Time{}, errs.Wrap(err)
+	}
+	if res.Valid {
+		return res.Time, nil
+	}
+	return time.Time{}, errs.Wrap(ErrNullValue)
 }
 
 // Close method is closing RowsReader instance.

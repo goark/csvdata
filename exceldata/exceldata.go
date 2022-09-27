@@ -40,6 +40,11 @@ func New(xlsx *excelize.File, sheetName string) (*Reader, error) {
 	return &Reader{rows}, nil
 }
 
+// TrimSpace returns false.
+func (r *Reader) TrimSpace() bool {
+	return false
+}
+
 // LazyQuotes returns true.
 func (r *Reader) LazyQuotes() bool {
 	return true

@@ -14,20 +14,20 @@ import (
 
 const (
 	csv1 = `"order", name ,"mass","distance","habitable","note"
-1, Mercury, 0.055, 0.4,false,""
-2, Venus, 0.815, 0.7,false,""
-3, Earth, 1.0, 1.0,true,""
-4, Mars, 0.107, 1.5,false,""
+1, Mercury, 0.055, 0.4,false,"2006-01-02T15:04:05+09:00"
+2, Venus, 0.815, 0.7,false,"2006-01-02T15:04:05+09:00"
+3, Earth, 1.0, 1.0,true,"2006-01-02T15:04:05+09:00"
+4, Mars, 0.107, 1.5,false,"2006-01-02T15:04:05+09:00"
 `
-	tsv1 = `1	 Mercury	 0.055	 0.4	false	""
-2	 Venus	 0.815	 0.7	false	""
-3	 Earth	 1.0	 1.0	true	""
-4	 Mars	 0.107	 1.5	false	""
+	tsv1 = `1	 Mercury	 0.055	 0.4	false	"2006-01-02T15:04:05+09:00"
+2	 Venus	 0.815	 0.7	false	"2006-01-02T15:04:05+09:00"
+3	 Earth	 1.0	 1.0	true	"2006-01-02T15:04:05+09:00"
+4	 Mars	 0.107	 1.5	false	"2006-01-02T15:04:05+09:00"
 `
 )
 
 func TestWithNil(t *testing.T) {
-	r := csvdata.NewRows((*csvdata.Reader)(nil).WithComma(',').WithLazyQuotes(true).WithTrimLeadingSpace(true).WithFieldsPerRecord(1), true)
+	r := csvdata.NewRows((*csvdata.Reader)(nil).WithComma(',').WithTrimSpace(true).WithLazyQuotes(true).WithTrimLeadingSpace(true).WithFieldsPerRecord(1), true)
 	defer r.Close() //dummy
 	if err := r.Next(); !errors.Is(err, csvdata.ErrNullPointer) {
 		t.Errorf("Next() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
@@ -65,7 +65,7 @@ func TestWithNil(t *testing.T) {
 
 func TestErrReader(t *testing.T) {
 	errtest := errors.New("test")
-	r := csvdata.NewRows(csvdata.New(iotest.ErrReader(errtest)).WithComma(',').WithLazyQuotes(true).WithTrimLeadingSpace(true).WithFieldsPerRecord(1), true)
+	r := csvdata.NewRows(csvdata.New(iotest.ErrReader(errtest)).WithComma(',').WithTrimSpace(true).WithLazyQuotes(true).WithTrimLeadingSpace(true).WithFieldsPerRecord(1), true)
 	defer r.Close() //dummy
 	if err := r.Next(); !errors.Is(err, errtest) {
 		t.Errorf("Next() is \"%+v\", want \"%+v\".", err, errtest)
@@ -107,7 +107,7 @@ func TestNormal(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		rc := csvdata.NewRows(csvdata.New(tc.inp).WithComma(tc.sep).WithLazyQuotes(true).WithTrimLeadingSpace(true).WithFieldsPerRecord(tc.size), tc.headerFlag)
+		rc := csvdata.NewRows(csvdata.New(tc.inp).WithComma(tc.sep).WithLazyQuotes(true).WithTrimSpace(true).WithTrimLeadingSpace(true).WithFieldsPerRecord(tc.size), tc.headerFlag)
 		if err := rc.Next(); err != nil {
 			t.Errorf("Next() is \"%+v\", want nil.", err)
 		} else {
@@ -140,7 +140,7 @@ func TestNormal(t *testing.T) {
 				t.Errorf("Column() is \"%v\", want \"%v\".", name, tc.name2)
 			}
 			//bool
-			if _, err = rc.GetBool(5); !errors.Is(err, csvdata.ErrNullValue) {
+			if _, err = rc.GetBool(5); !errors.Is(err, strconv.ErrSyntax) {
 				t.Errorf("GetBool() is \"%+v\", want \"%+v\".", err, strconv.ErrSyntax)
 			}
 			if _, err = rc.ColumnBool("name"); !errors.Is(err, strconv.ErrSyntax) && !errors.Is(err, tc.err) {
@@ -161,7 +161,7 @@ func TestNormal(t *testing.T) {
 				t.Errorf("ColumnBool() is \"%+v\", want \"%+v\".", flagBool, tc.flagBool)
 			}
 			//float
-			if _, err = rc.GetFloat64(5); !errors.Is(err, csvdata.ErrNullValue) {
+			if _, err = rc.GetFloat64(5); !errors.Is(err, strconv.ErrSyntax) {
 				t.Errorf("GetFloat() is \"%+v\", want \"%+v\".", err, strconv.ErrSyntax)
 			}
 			if _, err = rc.ColumnFloat64("name"); !errors.Is(err, strconv.ErrSyntax) && !errors.Is(err, tc.err) {
@@ -182,7 +182,7 @@ func TestNormal(t *testing.T) {
 				t.Errorf("ColumnNullFloat64() is \"%+v\", want \"%+v\".", massFloat64, tc.massFloat64)
 			}
 			//int
-			if _, err = rc.GetInt64(5, 10); !errors.Is(err, csvdata.ErrNullValue) {
+			if _, err = rc.GetInt64(5, 10); !errors.Is(err, strconv.ErrSyntax) {
 				t.Errorf("GetInt64() is \"%+v\", want \"%+v\".", err, strconv.ErrSyntax)
 			}
 			if _, err = rc.ColumnInt64("name", 10); !errors.Is(err, strconv.ErrSyntax) && !errors.Is(err, tc.err) {
@@ -250,6 +250,13 @@ func TestNormal(t *testing.T) {
 			}
 			if err == nil && orderInt64 != tc.orderInt64 {
 				t.Errorf("ColumnNullInt64() is \"%+v\", want \"%+v\".", orderInt64, tc.orderInt64)
+			}
+			// time
+			if _, err = rc.ColumnNullTime("note", ""); !errors.Is(err, tc.err) {
+				t.Errorf("ColumnNullTime() is \"%+v\", want \"%+v\".", err, tc.err)
+			}
+			if _, err = rc.ColumnTime("note", ""); !errors.Is(err, tc.err) {
+				t.Errorf("ColumnNullTime() is \"%+v\", want \"%+v\".", err, tc.err)
 			}
 		}
 	}
