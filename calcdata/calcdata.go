@@ -35,6 +35,11 @@ func New(doc *ods.Doc, sheetName string) (*Reader, error) {
 	return &Reader{table: &doc.Table[index]}, nil
 }
 
+// TrimSpace returns false.
+func (r *Reader) TrimSpace() bool {
+	return false
+}
+
 // LazyQuotes returns true.
 func (r *Reader) LazyQuotes() bool {
 	return true

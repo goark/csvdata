@@ -10,8 +10,9 @@ import (
 
 // Reader is class of CSV reader
 type Reader struct {
-	reader *csv.Reader
-	closer func() error
+	trimSpace bool
+	reader    *csv.Reader
+	closer    func() error
 }
 
 var _ RowsReader = (*Reader)(nil) //Reader is compatible with RowsReader interface
@@ -38,6 +39,11 @@ func New(r io.Reader) *Reader {
 	return &Reader{reader: cr, closer: closer}
 }
 
+// TrimSpace returns TrimSpace option.
+func (r *Reader) TrimSpace() bool {
+	return r.trimSpace
+}
+
 // LazyQuotes returns LazyQuotes option.
 func (r *Reader) LazyQuotes() bool {
 	return r.reader.LazyQuotes
@@ -49,6 +55,16 @@ func (r *Reader) WithComma(c rune) *Reader {
 		return nil
 	}
 	r.reader.Comma = c
+	return r
+}
+
+// WithTrimSpace method sets trimSpace and TrimLeadingSpace property.
+func (r *Reader) WithTrimSpace(mode bool) *Reader {
+	if r == nil {
+		return nil
+	}
+	r.trimSpace = mode
+	r.reader.TrimLeadingSpace = mode
 	return r
 }
 
