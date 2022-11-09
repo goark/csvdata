@@ -87,10 +87,19 @@ func (r *Rows) GetString(i int) (string, error) {
 	if r == nil {
 		return "", errs.Wrap(ErrNullValue)
 	}
-	if i < 0 || i >= len(r.rowdata) {
+	if i < 0 {
 		return "", errs.Wrap(ErrOutOfIndex, errs.WithContext("index", i))
 	}
-	s := r.rowdata[i]
+	var s string
+	if i >= len(r.rowdata) {
+		if len(r.headerStrings) == 0 {
+			return "", errs.Wrap(ErrOutOfIndex, errs.WithContext("index", i))
+		} else if i >= len(r.headerStrings) {
+			return "", errs.Wrap(ErrOutOfIndex, errs.WithContext("index", i))
+		}
+	} else {
+		s = r.rowdata[i]
+	}
 	if r.TrimSpace() {
 		s = strings.TrimSpace(s)
 	}
@@ -139,13 +148,13 @@ func (r *Rows) ColumnString(s string) (string, error) {
 	return "", nil
 }
 
-// GetString method returns string data in current row.
+// Get method returns string data in current row.
 func (r Rows) Get(i int) string {
 	s, _ := r.GetString(i)
 	return s
 }
 
-// GetString method returns string data in current row.
+// Column method returns string data in current row.
 func (r *Rows) Column(s string) string {
 	cs, _ := r.ColumnString(s)
 	return cs
@@ -424,12 +433,12 @@ func (r *Rows) Close() error {
 
 func (r *Rows) indexOf(s string) (int, error) {
 	if r == nil {
-		return 0, errs.Wrap(ErrNullPointer)
+		return 0, errs.Wrap(ErrNullPointer, errs.WithContext("column", s))
 	}
 	if i, ok := r.headerMap[strings.TrimSpace(s)]; ok {
 		return i, nil
 	}
-	return 0, errs.Wrap(ErrOutOfIndex)
+	return 0, errs.Wrap(ErrOutOfIndex, errs.WithContext("column", s))
 }
 
 /* Copyright 2021-2022 Spiegel
