@@ -27,23 +27,53 @@ type Rows struct {
 	rowdata       []string
 }
 
+type nullRowsReader struct{}
+
+func (nullRowsReader) Read() ([]string, error) {
+	return nil, errs.Wrap(ErrNullPointer)
+}
+
+func (nullRowsReader) Close() error {
+	return nil
+}
+
+func (nullRowsReader) TrimSpace() bool {
+	return false
+}
+
+func (nullRowsReader) LazyQuotes() bool {
+	return false
+}
+
 func NewRows(rr RowsReader, headerFlag bool) *Rows {
+	if rr == nil {
+		rr = nullRowsReader{}
+	}
 	return &Rows{reader: rr, headerFlag: headerFlag, headerMap: map[string]int{}}
 }
 
 // TrimSpace returns TrimSpace option value.
 func (r *Rows) TrimSpace() bool {
+	if r == nil || r.reader == nil {
+		return false
+	}
 	return r.reader.TrimSpace()
 }
 
 // LazyQuotes returns LazyQuotes option value.
 func (r *Rows) LazyQuotes() bool {
+	if r == nil || r.reader == nil {
+		return false
+	}
 	return r.reader.LazyQuotes()
 }
 
 // Header method returns header strings.
 func (r *Rows) Header() ([]string, error) {
 	if r == nil {
+		return nil, errs.Wrap(ErrNullPointer)
+	}
+	if r.reader == nil {
 		return nil, errs.Wrap(ErrNullPointer)
 	}
 	var err error
@@ -62,6 +92,9 @@ func (r *Rows) Header() ([]string, error) {
 // Next method gets a next record.
 func (r *Rows) Next() error {
 	if r == nil {
+		return errs.Wrap(ErrNullPointer)
+	}
+	if r.reader == nil {
 		return errs.Wrap(ErrNullPointer)
 	}
 	if r.headerFlag {
@@ -428,6 +461,9 @@ func (r *Rows) ColumnTime(s, layout string) (time.Time, error) {
 
 // Close method is closing RowsReader instance.
 func (r *Rows) Close() error {
+	if r == nil || r.reader == nil {
+		return nil
+	}
 	return r.reader.Close()
 }
 

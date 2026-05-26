@@ -63,6 +63,21 @@ func TestWithNil(t *testing.T) {
 	}
 }
 
+func TestNewRowsWithNilReader(t *testing.T) {
+	r := csvdata.NewRows(nil, true)
+	defer r.Close() //dummy
+
+	if _, err := r.Header(); !errors.Is(err, csvdata.ErrNullPointer) {
+		t.Errorf("Header() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
+	}
+	if err := r.Next(); !errors.Is(err, csvdata.ErrNullPointer) {
+		t.Errorf("Next() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
+	}
+	if _, err := r.GetString(0); !errors.Is(err, csvdata.ErrOutOfIndex) {
+		t.Errorf("GetString() is \"%+v\", want \"%+v\".", err, csvdata.ErrOutOfIndex)
+	}
+}
+
 func TestErrReader(t *testing.T) {
 	errtest := errors.New("test")
 	r := csvdata.NewRows(csvdata.New(iotest.ErrReader(errtest)).WithComma(',').WithTrimSpace(true).WithLazyQuotes(true).WithTrimLeadingSpace(true).WithFieldsPerRecord(1), true)
