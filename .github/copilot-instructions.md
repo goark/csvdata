@@ -39,6 +39,17 @@ golangci-lint-v2 run --enable gosec --timeout 3m0s ./...
 
 - Prefer deterministic tests. Avoid external network dependencies.
 
+## Lint and Security Notes
+
+- In deferred cleanup, merge close errors with existing return errors using `errs.Join`.
+  - Example policy: `err = errs.Join(err, errs.Wrap(closeErr, errs.WithContext(...)))`
+- For file path handling, prefer sanitizing with `filepath.Clean` before opening files.
+  - Avoid using `#nosec G304` as the first option when path normalization can mitigate the warning.
+- For narrowing integer conversions (`G115`), prefer explicit range checks before conversion.
+  - If linter still reports a false positive after range checks, allow minimal `#nosec G115` with a reason comment.
+- Prefer clear conversions over bit-mask tricks for readability.
+  - After range checks, use direct conversion (e.g. `byte(v)`), not masking (e.g. `byte(v & 0xff)`).
+
 ## Release Process
 
 - Create releases from `main`.

@@ -62,12 +62,14 @@ func (r *Reader) Read() ([]string, error) {
 	return cols, nil
 }
 
-func openFile(path string) (*ods.Doc, error) {
+func openFile(path string) (_ *ods.Doc, err error) {
 	f, err := ods.Open(path)
 	if err != nil {
 		return nil, errs.Wrap(err, errs.WithContext("path", path))
 	}
-	defer f.Close()
+	defer func() {
+		err = errs.Join(err, errs.Wrap(f.Close(), errs.WithContext("path", path)))
+	}()
 	var doc ods.Doc
 	if err := f.ParseContent(&doc); err != nil {
 		return nil, errs.Wrap(err, errs.WithContext("path", path))
