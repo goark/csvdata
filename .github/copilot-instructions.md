@@ -46,7 +46,8 @@ golangci-lint-v2 run --enable gosec --timeout 3m0s ./...
 - For file path handling, prefer sanitizing with `filepath.Clean` before opening files.
   - Avoid using `#nosec G304` as the first option when path normalization can mitigate the warning.
 - For narrowing integer conversions (`G115`), prefer explicit range checks before conversion.
-  - If linter still reports a false positive after range checks, allow minimal `#nosec G115` with a reason comment.
+  - Prefer analyzer-friendly control flow: return early for invalid/null paths first, then apply range checks, then convert.
+  - If linter or CodeQL still reports a false positive after that, allow minimal `#nosec G115` with a reason comment.
 - Prefer clear conversions over bit-mask tricks for readability.
   - After range checks, use direct conversion (e.g. `byte(v)`), not masking (e.g. `byte(v & 0xff)`).
 
