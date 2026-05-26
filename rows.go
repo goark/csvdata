@@ -319,10 +319,12 @@ func (r *Rows) ColumnNullInt32(s string, base int) (sql.NullInt32, error) {
 	if err != nil {
 		return sql.NullInt32{}, errs.Wrap(err)
 	}
-	if res.Valid && (res.Int64 < math.MinInt32 || res.Int64 > math.MaxInt32) {
+	if !res.Valid {
+		return sql.NullInt32{Valid: false}, nil
+	}
+	if res.Int64 < math.MinInt32 || res.Int64 > math.MaxInt32 {
 		return sql.NullInt32{}, errs.Wrap(strconv.ErrRange)
 	}
-	// #nosec G115 -- Value range is checked just above.
 	return sql.NullInt32{Int32: int32(res.Int64), Valid: true}, nil
 }
 
@@ -332,10 +334,12 @@ func (r *Rows) ColumnNullInt16(s string, base int) (sql.NullInt16, error) {
 	if err != nil {
 		return sql.NullInt16{Valid: false}, errs.Wrap(err)
 	}
-	if res.Valid && (res.Int64 < math.MinInt16 || res.Int64 > math.MaxInt16) {
+	if !res.Valid {
+		return sql.NullInt16{Valid: false}, nil
+	}
+	if res.Int64 < math.MinInt16 || res.Int64 > math.MaxInt16 {
 		return sql.NullInt16{Valid: false}, errs.Wrap(strconv.ErrRange)
 	}
-	// #nosec G115 -- Value range is checked just above.
 	return sql.NullInt16{Int16: int16(res.Int64), Valid: true}, nil
 }
 
@@ -345,10 +349,12 @@ func (r *Rows) ColumnNullByte(s string, base int) (sql.NullByte, error) {
 	if err != nil {
 		return sql.NullByte{Valid: false}, errs.Wrap(err)
 	}
-	if res.Valid && (res.Int64 < 0 || res.Int64 > math.MaxUint8) {
+	if !res.Valid {
+		return sql.NullByte{Valid: false}, nil
+	}
+	if res.Int64 < 0 || res.Int64 > math.MaxUint8 {
 		return sql.NullByte{Valid: false}, errs.Wrap(strconv.ErrRange)
 	}
-	// #nosec G115 -- Value range is checked just above.
 	return sql.NullByte{Byte: byte(res.Int64), Valid: true}, nil
 }
 
