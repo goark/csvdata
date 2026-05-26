@@ -19,7 +19,11 @@ func ExampleNew() {
 		return
 	}
 	rc := csvdata.NewRows(r, true)
-	defer rc.Close() //dummy
+	defer func() {
+		if err := rc.Close(); err != nil {
+			panic(err)
+		}
+	}()
 
 	if err := rc.Next(); err != nil {
 		fmt.Println(err)

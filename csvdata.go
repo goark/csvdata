@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/goark/errs"
 )
@@ -19,9 +20,13 @@ var _ RowsReader = (*Reader)(nil) //Reader is compatible with RowsReader interfa
 
 // OpenFile returns CSV file Reader.
 func OpenFile(path string) (*os.File, error) {
-	file, err := os.Open(path)
+	cleanPath := path
+	if len(path) > 0 {
+		cleanPath = filepath.Clean(path)
+	}
+	file, err := os.Open(cleanPath)
 	if err != nil {
-		return nil, errs.Wrap(err, errs.WithContext("path", path))
+		return nil, errs.Wrap(err, errs.WithContext("path", cleanPath))
 	}
 	return file, nil
 }

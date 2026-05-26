@@ -28,7 +28,11 @@ const (
 
 func TestWithNil(t *testing.T) {
 	r := csvdata.NewRows((*csvdata.Reader)(nil).WithComma(',').WithTrimSpace(true).WithLazyQuotes(true).WithTrimLeadingSpace(true).WithFieldsPerRecord(1), true)
-	defer r.Close() //dummy
+	t.Cleanup(func() {
+		if err := r.Close(); err != nil {
+			t.Errorf("Close() is \"%+v\", want <nil>.", err)
+		}
+	})
 	if err := r.Next(); !errors.Is(err, csvdata.ErrNullPointer) {
 		t.Errorf("Next() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
 	}
@@ -63,10 +67,33 @@ func TestWithNil(t *testing.T) {
 	}
 }
 
+func TestNewRowsWithNilReader(t *testing.T) {
+	r := csvdata.NewRows(nil, true)
+	t.Cleanup(func() {
+		if err := r.Close(); err != nil {
+			t.Errorf("Close() is \"%+v\", want <nil>.", err)
+		}
+	})
+
+	if _, err := r.Header(); !errors.Is(err, csvdata.ErrNullPointer) {
+		t.Errorf("Header() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
+	}
+	if err := r.Next(); !errors.Is(err, csvdata.ErrNullPointer) {
+		t.Errorf("Next() is \"%+v\", want \"%+v\".", err, csvdata.ErrNullPointer)
+	}
+	if _, err := r.GetString(0); !errors.Is(err, csvdata.ErrOutOfIndex) {
+		t.Errorf("GetString() is \"%+v\", want \"%+v\".", err, csvdata.ErrOutOfIndex)
+	}
+}
+
 func TestErrReader(t *testing.T) {
 	errtest := errors.New("test")
 	r := csvdata.NewRows(csvdata.New(iotest.ErrReader(errtest)).WithComma(',').WithTrimSpace(true).WithLazyQuotes(true).WithTrimLeadingSpace(true).WithFieldsPerRecord(1), true)
-	defer r.Close() //dummy
+	t.Cleanup(func() {
+		if err := r.Close(); err != nil {
+			t.Errorf("Close() is \"%+v\", want <nil>.", err)
+		}
+	})
 	if err := r.Next(); !errors.Is(err, errtest) {
 		t.Errorf("Next() is \"%+v\", want \"%+v\".", err, errtest)
 	}
@@ -77,7 +104,11 @@ func TestErrReader(t *testing.T) {
 
 func TestBlankReader(t *testing.T) {
 	r := csvdata.NewRows(csvdata.New(strings.NewReader("")).WithComma(',').WithFieldsPerRecord(1), true)
-	defer r.Close() //dummy
+	t.Cleanup(func() {
+		if err := r.Close(); err != nil {
+			t.Errorf("Close() is \"%+v\", want <nil>.", err)
+		}
+	})
 	if err := r.Next(); !errors.Is(err, io.EOF) {
 		t.Errorf("Next() is \"%+v\", want \"%+v\".", err, io.EOF)
 	}
@@ -220,7 +251,7 @@ func TestNormal(t *testing.T) {
 			if !errors.Is(err, tc.err) {
 				t.Errorf("ColumnByte() is \"%+v\", want \"%+v\".", err, tc.err)
 			}
-			if err == nil && orderB != byte(tc.order) {
+			if err == nil && int(orderB) != int(tc.order) {
 				t.Errorf("ColumnByte() is \"%+v\", want \"%+v\".", orderB, tc.order)
 			}
 			orderByte, err := rc.ColumnNullByte("order", 10)

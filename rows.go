@@ -27,23 +27,53 @@ type Rows struct {
 	rowdata       []string
 }
 
+type nullRowsReader struct{}
+
+func (nullRowsReader) Read() ([]string, error) {
+	return nil, errs.Wrap(ErrNullPointer)
+}
+
+func (nullRowsReader) Close() error {
+	return nil
+}
+
+func (nullRowsReader) TrimSpace() bool {
+	return false
+}
+
+func (nullRowsReader) LazyQuotes() bool {
+	return false
+}
+
 func NewRows(rr RowsReader, headerFlag bool) *Rows {
+	if rr == nil {
+		rr = nullRowsReader{}
+	}
 	return &Rows{reader: rr, headerFlag: headerFlag, headerMap: map[string]int{}}
 }
 
 // TrimSpace returns TrimSpace option value.
 func (r *Rows) TrimSpace() bool {
+	if r == nil || r.reader == nil {
+		return false
+	}
 	return r.reader.TrimSpace()
 }
 
 // LazyQuotes returns LazyQuotes option value.
 func (r *Rows) LazyQuotes() bool {
+	if r == nil || r.reader == nil {
+		return false
+	}
 	return r.reader.LazyQuotes()
 }
 
 // Header method returns header strings.
 func (r *Rows) Header() ([]string, error) {
 	if r == nil {
+		return nil, errs.Wrap(ErrNullPointer)
+	}
+	if r.reader == nil {
 		return nil, errs.Wrap(ErrNullPointer)
 	}
 	var err error
@@ -62,6 +92,9 @@ func (r *Rows) Header() ([]string, error) {
 // Next method gets a next record.
 func (r *Rows) Next() error {
 	if r == nil {
+		return errs.Wrap(ErrNullPointer)
+	}
+	if r.reader == nil {
 		return errs.Wrap(ErrNullPointer)
 	}
 	if r.headerFlag {
@@ -286,10 +319,13 @@ func (r *Rows) ColumnNullInt32(s string, base int) (sql.NullInt32, error) {
 	if err != nil {
 		return sql.NullInt32{}, errs.Wrap(err)
 	}
-	if res.Valid && (res.Int64 < math.MinInt32 || res.Int64 > math.MaxInt32) {
+	if !res.Valid {
+		return sql.NullInt32{Valid: false}, nil
+	}
+	if res.Int64 < math.MinInt32 || res.Int64 > math.MaxInt32 {
 		return sql.NullInt32{}, errs.Wrap(strconv.ErrRange)
 	}
-	return sql.NullInt32{Int32: int32(res.Int64 & 0xffffffff), Valid: true}, nil
+	return sql.NullInt32{Int32: int32(res.Int64), Valid: true}, nil
 }
 
 // ColumnNullInt16 method returns sql.NullFloat64 data in current row.
@@ -298,10 +334,13 @@ func (r *Rows) ColumnNullInt16(s string, base int) (sql.NullInt16, error) {
 	if err != nil {
 		return sql.NullInt16{Valid: false}, errs.Wrap(err)
 	}
-	if res.Valid && (res.Int64 < math.MinInt16 || res.Int64 > math.MaxInt16) {
+	if !res.Valid {
+		return sql.NullInt16{Valid: false}, nil
+	}
+	if res.Int64 < math.MinInt16 || res.Int64 > math.MaxInt16 {
 		return sql.NullInt16{Valid: false}, errs.Wrap(strconv.ErrRange)
 	}
-	return sql.NullInt16{Int16: int16(res.Int64 & 0xffff), Valid: true}, nil
+	return sql.NullInt16{Int16: int16(res.Int64), Valid: true}, nil
 }
 
 // ColumnNullByte method returns sql.NullByte data in current row.
@@ -310,10 +349,13 @@ func (r *Rows) ColumnNullByte(s string, base int) (sql.NullByte, error) {
 	if err != nil {
 		return sql.NullByte{Valid: false}, errs.Wrap(err)
 	}
-	if res.Valid && (res.Int64 < 0 || res.Int64 > math.MaxUint8) {
+	if !res.Valid {
+		return sql.NullByte{Valid: false}, nil
+	}
+	if res.Int64 < 0 || res.Int64 > math.MaxUint8 {
 		return sql.NullByte{Valid: false}, errs.Wrap(strconv.ErrRange)
 	}
-	return sql.NullByte{Byte: byte(res.Int64 & 0xff), Valid: true}, nil
+	return sql.NullByte{Byte: byte(res.Int64), Valid: true}, nil
 }
 
 // ColumnInt64 method returns type int64 data in current row.
@@ -362,7 +404,7 @@ func (r *Rows) ColumnInt8(s string, base int) (int8, error) {
 		if res.Int16 < math.MinInt8 || res.Int16 > math.MaxInt8 {
 			return 0, errs.Wrap(strconv.ErrRange)
 		}
-		return int8(res.Int16 & 0xff), nil
+		return int8(res.Int16), nil
 	}
 	return 0, errs.Wrap(ErrNullValue)
 }
@@ -428,6 +470,9 @@ func (r *Rows) ColumnTime(s, layout string) (time.Time, error) {
 
 // Close method is closing RowsReader instance.
 func (r *Rows) Close() error {
+	if r == nil || r.reader == nil {
+		return nil
+	}
 	return r.reader.Close()
 }
 
